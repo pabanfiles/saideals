@@ -1,6 +1,6 @@
 // Replace YOUR_SHEET_ID with your Google Sheet ID
 // To update products, edit the Google Sheet directly
-const SHEET_URL = 'https://opensheet.elk.sh/1fHAeqAmEd7PSxVwRWWEbNm8ZKQdOwi2-KaFh-TwklqE/Sheet1';
+const SHEET_URL = 'https://opensheet.elk.sh/d/1fHAeqAmEd7PSxVwRWWEbmN8ZKQdOwi2-KaFh-TwklqE/Sheet1';
 const $ = (s, r = document) => r.querySelector(s);
 const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
