@@ -7,7 +7,7 @@ const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } cat
 const S = { all: [], view: [], page: 1, per: 20, cat: 'all', q: '', wish: ls('sd_wish', []), seen: ls('sd_seen', {}), recent: ls('sd_recent', []), list: false };
 const inr = n => '₹' + Number(n).toLocaleString('en-IN');
 const img = p => (p.image || '').startsWith('http') ? p.image : `https://images.unsplash.com/${p.image}?w=500&q=70&auto=format&fit=crop`;
-const off = p => Math.round((1 - p.price / p.original) * 100);
+const off = p => { const orig = +(p.original || p.originalPrice || 0); if (!orig || !p.price || orig <= p.price) return 0; return Math.round((1 - p.price / orig) * 100); };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 async function load() {
@@ -16,7 +16,14 @@ async function load() {
   try {
     if (SHEET_URL.includes('YOUR_SHEET_ID')) throw 0;
     const r = await fetch(SHEET_URL); if (!r.ok) throw 0;
-    data = (await r.json()).map((p, i) => ({ ...p, id: +p.id || i + 1, price: +p.price, original: +p.original, rating: +p.rating, reviews: +p.reviews }));
+    data = (await r.json()).map((p, i) => ({ 
+      ...p, 
+      id: +p.id || i + 1, 
+      price: +p.price || 0, 
+      original: +(p.originalPrice || p.original || 0), 
+      rating: +p.rating || 0, 
+      reviews: +p.reviews || 0 
+    }));
   } catch { data = await (await fetch('data.json')).json(); }
   const extra = ls('sd_products', []);
   S.all = [...extra, ...data];
@@ -25,9 +32,11 @@ async function load() {
 
 function card(p) {
   const on = S.wish.includes(p.id);
-  return `<article class="card"><div class="im"><img src="${img(p)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none'"><span class="disc">${off(p)}% OFF</span><button class="heart ${on ? 'on' : ''}" data-h="${p.id}" aria-label="Save to wishlist">♥</button><span class="store ${p.store}">${p.store}</span><div class="qv">👁 Quick View</div></div>
+  const discount = off(p);
+  const orig = +(p.original || p.originalPrice || 0);
+  return `<article class="card"><div class="im"><img src="${img(p)}" alt="${esc(p.name)}" loading="lazy" onerror="this.style.display='none'"><span class="disc">${discount}% OFF</span><button class="heart ${on ? 'on' : ''}" data-h="${p.id}" aria-label="Save to wishlist">♥</button><span class="store ${p.store}">${p.store}</span><div class="qv">👁 Quick View</div></div>
 <div class="bd"><h3>${esc(p.name)}</h3><div class="rt"><b>⭐ ${p.rating}</b>(${p.reviews.toLocaleString('en-IN')})</div>
-<div class="pr"><strong>${inr(p.price)}</strong><s>${inr(p.original)}</s><em>${off(p)}% off</em></div><div class="dl">🚚 Free Delivery</div>
+<div class="pr"><strong>${inr(p.price)}</strong>${orig ? `<s>${inr(orig)}</s>` : ''}${discount ? `<em>${discount}% off</em>` : ''}</div><div class="dl">🚚 Free Delivery</div>
 <a class="buy" data-b="${p.id}" href="${p.link}" target="_blank" rel="sponsored noopener">Buy Now</a></div></article>`;
 }
 
