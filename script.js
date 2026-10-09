@@ -1,6 +1,6 @@
-// Replace YOUR_SHEET_ID with your Google Sheet ID
-// To update products, edit the Google Sheet directly
-const SHEET_URL = 'https://opensheet.elk.sh/1fHAeqAmEd7PSxVwRWWEbmN8ZKQdOwi2-KaFh-TwklqE/1';
+// SaiDeals - Affiliate Deal Aggregator
+// Sheet ID: 17MRsUL3xh4zbuLv3HOQwm3CNCLXC-3hS-7jqaSW6_44
+const SHEET_URL = 'https://opensheet.elk.sh/17MRsUL3xh4zbuLv3HOQwm3CNCLXC-3hS-7jqaSW6_44/1';
 const $ = (s, r = document) => r.querySelector(s);
 const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
@@ -18,7 +18,7 @@ async function load() {
     const r = await fetch(SHEET_URL); if (!r.ok) throw 0;
     data = (await r.json()).map((p, i) => ({ ...p, id: +p.id || i + 1, price: +p.price, original: +p.original, rating: +p.rating, reviews: +p.reviews }));
   } catch { data = await (await fetch('data.json')).json(); }
-  const extra = ls('sd_products', []); // products added in admin panel
+  const extra = ls('sd_products', []);
   S.all = [...extra, ...data];
   render(); trending(); recs(); notifs();
 }
@@ -59,7 +59,6 @@ function recs() {
 }
 function notifs() { $('#np').innerHTML = S.all.slice(0, 4).map(p => `<p>🆕 ${esc(p.name.slice(0, 34))}… now ${inr(p.price)}</p>`).join(''); $('#nc').textContent = Math.min(4, S.all.length); }
 
-// Delegated clicks: wishlist, buy tracking, ripple
 document.addEventListener('click', e => {
   const h = e.target.closest('[data-h]');
   if (h) { const id = +h.dataset.h; S.wish = S.wish.includes(id) ? S.wish.filter(x => x !== id) : [...S.wish, id]; save('sd_wish', S.wish); render(false); trending(); recs(); }
@@ -72,7 +71,6 @@ document.addEventListener('click', e => {
   if (r) { const d = document.createElement('span'), k = r.getBoundingClientRect(), z = Math.max(k.width, k.height); d.className = 'rip'; d.style.cssText = `width:${z}px;height:${z}px;left:${e.clientX - k.left - z / 2}px;top:${e.clientY - k.top - z / 2}px`; r.append(d); setTimeout(() => d.remove(), 600); }
 });
 
-// Search: debounced 300ms, autocomplete, highlight, recent
 let t; const si = $('#q'), ac = $('#ac');
 si.addEventListener('input', () => {
   $('#qx').style.display = si.value ? 'block' : 'none'; clearTimeout(t);
@@ -90,7 +88,6 @@ $('#qx').onclick = () => { si.value = ''; S.q = ''; $('#qx').style.display = 'no
 function go() { S.q = si.value.trim(); ac.style.display = 'none'; if (S.q) { S.recent = [S.q, ...S.recent.filter(x => x !== S.q)].slice(0, 5); save('sd_recent', S.recent); } render(); $('#deals').scrollIntoView(); }
 document.addEventListener('click', e => { if (!e.target.closest('.search')) ac.style.display = 'none'; });
 
-// Controls
 ['#fs', '#fp', '#fr', '#so'].forEach(s => $(s).onchange = () => render());
 document.querySelectorAll('.cats button').forEach(b => b.onclick = () => { S.cat = b.dataset.c; document.querySelectorAll('.cats button').forEach(x => x.classList.toggle('on', x === b)); render(); });
 document.querySelectorAll('.vt button').forEach(b => b.onclick = () => { S.list = b.dataset.v === 'l'; document.querySelectorAll('.vt button').forEach(x => x.classList.toggle('on', x === b)); render(false); });
@@ -101,16 +98,13 @@ $('#burger').onclick = () => tg(true); sc.onclick = () => tg(false); dr.addEvent
 $('#wl').onclick = () => { S.q = ''; const w = S.all.filter(p => S.wish.includes(p.id)); $('#grid').className = 'grid'; $('#grid').innerHTML = w.length ? w.map(card).join('') : '<div class="none">💔 Your wishlist is empty. Tap ♥ on any deal.</div>'; $('#count').textContent = `${w.length} saved`; $('#more').style.display = 'none'; $('#deals').scrollIntoView(); };
 $('#news').onsubmit = e => { e.preventDefault(); e.target.innerHTML = '<b>✅ Subscribed! Daily deals are on the way.</b>'; };
 
-// Flash sale countdown (resets daily at midnight-ish window)
 let end = Date.now() + (2 * 3600 + 45 * 60 + 30) * 1000;
 setInterval(() => { let s = Math.max(0, Math.floor((end - Date.now()) / 1000)); if (!s) end = Date.now() + 3 * 3600e3; $('#timer').textContent = [s / 3600, s % 3600 / 60, s % 60].map(n => String(Math.floor(n)).padStart(2, '0')).join(':'); }, 1000);
 
-// Floating UI
 addEventListener('scroll', () => $('#top').classList.toggle('show', scrollY > 400), { passive: true });
 $('#top').onclick = () => scrollTo({ top: 0, behavior: 'smooth' });
 if (ls('sd_cookie', false)) $('#cookie').remove(); else $('#ck').onclick = () => { save('sd_cookie', true); $('#cookie').remove(); };
 
-// Settings saved from the admin console (sd_settings)
 (function(){const s=ls('sd_settings',null);if(!s)return;
  if(s.name){document.title=s.name+' – '+(s.tagline||'');document.querySelectorAll('.logo b,.fg b').forEach(e=>e.textContent=s.name);}
  if(s.tagline)document.querySelectorAll('.logo small').forEach(e=>e.textContent=s.tagline+' ⭐');
